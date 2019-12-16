@@ -101,9 +101,9 @@ void input_ex(NODE** head, NODE** tail, char* file_name) {
 			}
 			else {
 				if (data == '(') {
-					if(prev_data == ')' || prev_data_type == OPERAND){
-            append(head, tail, newnode('*'));
-          }
+					if (prev_data == ')' || prev_data_type == OPERAND) {
+						append(head, tail, newnode('*'));
+					}
 					openBra_cnt++;
 
 					push(&open_bracket, '(');
@@ -179,7 +179,7 @@ void trans_to_postfix(NODE** infix_head, NODE** postfix_head, NODE** postfix_tai
 			else if (infix_data == '(') {
 				push(&operator, infix_data);
 			}
-			else if (operator->data == '(' && infix_data!=')') {
+			else if (operator->data == '(' && infix_data != ')') {
 				append(postfix_head, postfix_tail, newnode(' '));
 				push(&operator, infix_data);
 			}
@@ -229,7 +229,7 @@ int getNodeLength(NODE* head) {
 }
 
 void multiply(NODE** fir_int_head, NODE** fir_dec_head, NODE** sec_int_head, NODE** sec_dec_head, STACK** stack) {
-	NODE* result_head = NULL, * result_tail = NULL;
+	NODE* result_head = NULL, * result_tail = NULL;      //multiply의 연산 결과(reverse)
 	NODE* fir_head = NULL, * fir_tail = NULL, * sec_head = NULL, * sec_tail = NULL;
 	NODE* sum_tmp_head = NULL, * sum_tmp_tail = NULL, * mul_tmp_head = NULL, * mul_tmp_tail = NULL, * tmp_head = NULL, * tmp_tail = NULL;
 	char sec_argument;      //sec의 한자리 수
@@ -258,6 +258,13 @@ void multiply(NODE** fir_int_head, NODE** fir_dec_head, NODE** sec_int_head, NOD
 		append(&sec_head, &sec_tail, newnode(dequeue(sec_int_head)));
 	}
 
+	//debug
+	/*
+	printf("fir:");
+	print(fir_head);
+	printf("sec:");
+	print(sec_head);
+	*/
 	while (sec_head != NULL) {
 		fir_arg_pos = fir_head;
 		sec_argument = dequeue(&sec_head);
@@ -274,6 +281,9 @@ void multiply(NODE** fir_int_head, NODE** fir_dec_head, NODE** sec_int_head, NOD
 		for (int i = 0; i < getNodeLength(fir_head); i++) {
 			num_tmp = (fir_arg_pos->data - '0') * (sec_argument - '0') + mul_roundup;
 
+			//debug
+			//printf("fir_arg_pos:%c\nsec_argument:%c\n", fir_arg_pos->data, sec_argument);
+			//printf("numtmp1:%d\n", num_tmp);
 			if (num_tmp > 9) {
 				mul_roundup = num_tmp / 10;
 				num_tmp %= 10;
@@ -282,6 +292,8 @@ void multiply(NODE** fir_int_head, NODE** fir_dec_head, NODE** sec_int_head, NOD
 				mul_roundup = 0;
 			}
 
+			//debug
+			//printf("num_tmp2:%d\n", num_tmp);
 			append(&mul_tmp_head, &mul_tmp_tail, newnode(num_tmp + '0'));
 			fir_arg_pos = fir_arg_pos->next;
 		}
@@ -290,6 +302,9 @@ void multiply(NODE** fir_int_head, NODE** fir_dec_head, NODE** sec_int_head, NOD
 		if (mul_roundup != 0) {
 			append(&mul_tmp_head, &mul_tmp_tail, newnode(mul_roundup + '0'));
 		}
+		//debug
+		//printf("mul:");
+		//print(mul_tmp_head);
 
 		if (sum_tmp_head == NULL) {
 			sum_tmp_head = mul_tmp_head;
@@ -332,46 +347,25 @@ void multiply(NODE** fir_int_head, NODE** fir_dec_head, NODE** sec_int_head, NOD
 			}
 		}
 
-		//소수점을 삽입하는 과정
-		int a = 1;
-		while (sum_tmp_head != NULL) {
-			append(&result_head, &result_tail, newnode(dequeue(&sum_tmp_head)));
-			if (result_dec_len == a) {
-				append(&result_head, &result_tail, newnode('.'));
-			}
-			a++;
-		}
+		//debug
+		//printf("sum:");
+		//print(sum_tmp_head);
 
-		//소수부 필요없는 0 제거
-		while (result_head != NULL && result_head->data == '0') {
-			dequeue(&result_head);
-			if (result_head != NULL && result_head->data == '.') {
-				dequeue(&result_head);
-				break;
-			}
-		}
-
-		//정수부 필요없는 0 제거
-		while (result_tail != NULL && result_tail->data == '0') {
-			if (result_tail->prev != NULL && (result_tail->prev->data == '.')) {
-				break;
-			}
-			reverse_dequeue(&result_tail, &result_head);
-		}
-
-		while (result_tail != NULL) {
-			push(stack, reverse_dequeue(&result_tail, &result_head));
-
-		}
-
-		/*
-		 while((*stack)->data == '0'){
-		 pop(stack);
-		 }
-		 */
 	}
+	//debug
+	//printf("result:");
+	//print(sum_tmp_head);
 
+	int a = 1, dec_point = getNodeLength(sum_tmp_head) - result_dec_len;
+	while (sum_tmp_tail != NULL) {
+		push(stack, reverse_dequeue(&sum_tmp_tail, &sum_tmp_head));
+		if (a == dec_point) {
+			push(stack, '.');
+		}
+		a++;
+	}
 }
+
 
 void plus(NODE** fir_int_head, NODE** fir_dec_head, NODE** sec_int_head, NODE** sec_dec_head, STACK** stack) {
 
@@ -796,3 +790,4 @@ void cal(NODE** postfix_head, NODE** postfix_tail) {
 	}
 	fclose(result);
 }
+
