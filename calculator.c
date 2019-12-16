@@ -101,13 +101,20 @@ void input_ex(NODE** head, NODE** tail, char* file_name) {
 			}
 			else {
 				if (data == '(') {
+					if(prev_data == ')' || prev_data_type == OPERAND){
+            append(head, tail, newnode('*'));
+          }
+					openBra_cnt++;
+
 					push(&open_bracket, '(');
+
 				}
 				else if (data == ')' && open_bracket != NULL) {
 					if (prev_data == '+' || prev_data == '-' || prev_data == '*' || prev_data == '(') {
 						printf("식을 잘못 입력하셨습니다.\n");
 						exit(1);
 					}
+					closeBra_cnt++;
 					pop(&open_bracket);
 				}
 				else if (data == ')' && open_bracket == NULL) {
@@ -172,7 +179,7 @@ void trans_to_postfix(NODE** infix_head, NODE** postfix_head, NODE** postfix_tai
 			else if (infix_data == '(') {
 				push(&operator, infix_data);
 			}
-			else if (operator->data == '(') {
+			else if (operator->data == '(' && infix_data!=')') {
 				append(postfix_head, postfix_tail, newnode(' '));
 				push(&operator, infix_data);
 			}
@@ -789,5 +796,3 @@ void cal(NODE** postfix_head, NODE** postfix_tail) {
 	}
 	fclose(result);
 }
-
-
