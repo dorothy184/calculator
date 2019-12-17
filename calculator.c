@@ -5,6 +5,7 @@
 #include "stack.h"
 #include "calculator.h"
 
+
 int getCharType(char data) {
 	if (data >= '0' && data <= '9') { return OPERAND; }
 	else if (data == '+' || data == '-' || data == '*' || data == '/' || data == '(' || data == ')') { return OPERATOR; }
@@ -31,22 +32,20 @@ void input_ex(NODE** head, NODE** tail, char* file_name) {
 	FILE* file;
 	file = fopen(file_name, "r");
 	STACK* open_bracket = NULL;          //'('을 저장하는 스택
-	int data_type, prev_data_type;      //현재 데이터 타입, 이전 데이터 타입
-	int dotcnt, openBra_cnt, closeBra_cnt = 0;
+	int data_type, prev_data_type = 0;      //현재 데이터 타입, 이전 데이터 타입
 	int continuezero, zerocheck = 0;
+	int openBra_cnt, closeBra_cnt = 0;
 	while (1) {
 		data = fgetc(file);
 		data_type = getCharType(data);
-		if (*tail != NULL) {
+		if ((*tail) != NULL) {
 			prev_data_type = getCharType((*tail)->data);
 			prev_data = (*tail)->data;
 		}
-		if (data == EOF) {
-			if (prev_data_type == OPERATOR && prev_data != ')') {
-				printf("식을 잘못 입력하셨습니다(식의 끝에 연산자 입력)\n");
-				exit(1);
-			}
-			break;
+		if (data == EOF && ((*tail)->data == ')' || prev_data_type == OPERAND || prev_data_type == DECIMAL_POINT)) { break; }
+		else if (data == EOF && (prev_data_type == OPERATOR && prev_data != ')')) {
+			printf("식을 잘못 입력하셨습니다(식의 끝에 연산자 입력).\n");
+			exit(1);
 		}
 		else if (data_type == INVALID_DATA) {
 			printf("식을 잘못 입력하셨습니다(%c를 입력함).\n", data);
@@ -77,25 +76,14 @@ void input_ex(NODE** head, NODE** tail, char* file_name) {
 					append(head, tail, newnode('+'));
 				}
 				if (prev_data == ')') {
+
 					append(head, tail, newnode('*'));
-				}
-				if ((data != '0' && data_type == OPERAND) || prev_data_type == DECIMAL_POINT) {
-					continuezero = 1;
-				}
-				if (continuezero == 0) {
-					if (zerocheck == 0) {
-						append(head, tail, newnode('0'));
-						zerocheck = 1;
-						continue;
-					}
-					else if (zerocheck == 1) {
-						continue;
-					}
+
 				}
 			}
+
 			if (data_type == DECIMAL_POINT && (prev_data_type == OPERATOR || (*head) == NULL))   //소수점 앞에 숫자가 없을 경우
 			{
-				dotcnt++;
 				append(head, tail, newnode('0'));
 				append(head, tail, newnode(data));
 			}
@@ -105,14 +93,15 @@ void input_ex(NODE** head, NODE** tail, char* file_name) {
 						append(head, tail, newnode('*'));
 					}
 					openBra_cnt++;
-
 					push(&open_bracket, '(');
-
 				}
 				else if (data == ')' && open_bracket != NULL) {
 					if (prev_data == '+' || prev_data == '-' || prev_data == '*' || prev_data == '(') {
+
 						printf("식을 잘못 입력하셨습니다.\n");
+
 						exit(1);
+
 					}
 					closeBra_cnt++;
 					pop(&open_bracket);
@@ -125,24 +114,24 @@ void input_ex(NODE** head, NODE** tail, char* file_name) {
 					if (prev_data == '(') {
 						append(head, tail, newnode('0'));
 					}
+					else if (prev_data == '+' || prev_data == '-' || prev_data == '*') {
+
+						printf("식을 잘못 입력하셨습니다.\n");
+						exit(1);
+
+					}
 				}
 				else if (data == '*') {
+
 					if (prev_data == '(' || prev_data == '+' || prev_data == '-' || prev_data == '*') {
+
 						printf("식을 잘못 입력하셨습니다.\n");
+
 						exit(1);
+
 					}
-				}
-				if (data_type == OPERATOR) {
-					dotcnt = 0;
-				}
-				else if (data_type == OPERAND || data_type == DECIMAL_POINT) {
-					if (data == '.') {
-						dotcnt++;
-					}
-					if (dotcnt > 1) {
-						printf("식을 잘못 입력하셨습니다.\n");
-						exit(1);
-					}
+
+
 				}
 				append(head, tail, newnode(data));
 			}
@@ -150,7 +139,9 @@ void input_ex(NODE** head, NODE** tail, char* file_name) {
 	}
 	if (openBra_cnt != closeBra_cnt) {
 		printf("식을 잘못 입력하셨습니다(bracket error)\n");
+
 		exit(1);
+
 	}
 	fclose(file);
 }
@@ -179,7 +170,7 @@ void trans_to_postfix(NODE** infix_head, NODE** postfix_head, NODE** postfix_tai
 			else if (infix_data == '(') {
 				push(&operator, infix_data);
 			}
-			else if (operator->data == '(' && infix_data != ')') {
+			else if (operator->data == '(') {
 				append(postfix_head, postfix_tail, newnode(' '));
 				push(&operator, infix_data);
 			}
@@ -229,7 +220,7 @@ int getNodeLength(NODE* head) {
 }
 
 void multiply(NODE** fir_int_head, NODE** fir_dec_head, NODE** sec_int_head, NODE** sec_dec_head, STACK** stack) {
-	NODE* result_head = NULL, * result_tail = NULL;      //multiply의 연산 결과(reverse)
+	NODE* result_head = NULL, * result_tail = NULL;
 	NODE* fir_head = NULL, * fir_tail = NULL, * sec_head = NULL, * sec_tail = NULL;
 	NODE* sum_tmp_head = NULL, * sum_tmp_tail = NULL, * mul_tmp_head = NULL, * mul_tmp_tail = NULL, * tmp_head = NULL, * tmp_tail = NULL;
 	char sec_argument;      //sec의 한자리 수
@@ -258,13 +249,16 @@ void multiply(NODE** fir_int_head, NODE** fir_dec_head, NODE** sec_int_head, NOD
 		append(&sec_head, &sec_tail, newnode(dequeue(sec_int_head)));
 	}
 
-	//debug
-	/*
-	printf("fir:");
-	print(fir_head);
-	printf("sec:");
-	print(sec_head);
-	*/
+	if ((fir_head->data == '0' && fir_head->next == NULL) && (sec_head->data == '0' && sec_head->next == NULL)) {
+		push(stack, '0');
+	}
+
+
+	if ((fir_head->data == '0' && fir_head->next == NULL) || (sec_head->data == '0' && sec_head->next == NULL)) {
+		push(stack, '0');
+		return;
+	}
+
 	while (sec_head != NULL) {
 		fir_arg_pos = fir_head;
 		sec_argument = dequeue(&sec_head);
@@ -281,9 +275,7 @@ void multiply(NODE** fir_int_head, NODE** fir_dec_head, NODE** sec_int_head, NOD
 		for (int i = 0; i < getNodeLength(fir_head); i++) {
 			num_tmp = (fir_arg_pos->data - '0') * (sec_argument - '0') + mul_roundup;
 
-			//debug
-			//printf("fir_arg_pos:%c\nsec_argument:%c\n", fir_arg_pos->data, sec_argument);
-			//printf("numtmp1:%d\n", num_tmp);
+
 			if (num_tmp > 9) {
 				mul_roundup = num_tmp / 10;
 				num_tmp %= 10;
@@ -291,9 +283,6 @@ void multiply(NODE** fir_int_head, NODE** fir_dec_head, NODE** sec_int_head, NOD
 			else {
 				mul_roundup = 0;
 			}
-
-			//debug
-			//printf("num_tmp2:%d\n", num_tmp);
 			append(&mul_tmp_head, &mul_tmp_tail, newnode(num_tmp + '0'));
 			fir_arg_pos = fir_arg_pos->next;
 		}
@@ -302,9 +291,7 @@ void multiply(NODE** fir_int_head, NODE** fir_dec_head, NODE** sec_int_head, NOD
 		if (mul_roundup != 0) {
 			append(&mul_tmp_head, &mul_tmp_tail, newnode(mul_roundup + '0'));
 		}
-		//debug
-		//printf("mul:");
-		//print(mul_tmp_head);
+
 
 		if (sum_tmp_head == NULL) {
 			sum_tmp_head = mul_tmp_head;
@@ -347,31 +334,56 @@ void multiply(NODE** fir_int_head, NODE** fir_dec_head, NODE** sec_int_head, NOD
 			}
 		}
 
-		//debug
-		//printf("sum:");
-		//print(sum_tmp_head);
 
 	}
-	//debug
-	//printf("result:");
-	//print(sum_tmp_head);
 
-	int a = 1, dec_point = getNodeLength(sum_tmp_head) - result_dec_len;
-	while (sum_tmp_tail != NULL) {
-		push(stack, reverse_dequeue(&sum_tmp_tail, &sum_tmp_head));
-		if (a == dec_point) {
-			push(stack, '.');
+
+
+	//소수점을 삽입하는 과정
+	int a = 1;
+	while (sum_tmp_head != NULL) {
+		append(&result_head, &result_tail, newnode(dequeue(&sum_tmp_head)));
+		if (result_dec_len == a) {
+			append(&result_head, &result_tail, newnode('.'));
 		}
 		a++;
 	}
-}
 
+	//소수부 필요없는 0 제거
+	while (result_dec_len != 0 && result_head != NULL && result_head->data == '0') {
+		dequeue(&result_head);
+		if (result_head != NULL && result_head->data == '.') {
+			dequeue(&result_head);
+			break;
+		}
+	}
+
+	//정수부 필요없는 0 제거
+	while (result_tail != NULL && result_tail->data == '0') {
+		if (result_tail->prev != NULL && (result_tail->prev->data == '.')) {
+			break;
+		}
+		reverse_dequeue(&result_tail, &result_head);
+	}
+
+	while (result_tail != NULL) {
+		push(stack, reverse_dequeue(&result_tail, &result_head));
+
+	}
+
+	/*
+	 while((*stack)->data == '0'){
+	 pop(stack);
+	 }
+	 */
+}
 
 void plus(NODE** fir_int_head, NODE** fir_dec_head, NODE** sec_int_head, NODE** sec_dec_head, STACK** stack) {
 
 	NODE* rev_int_head = NULL, * rev_int_tail = NULL, * rev_dec_head = NULL, * rev_dec_tail = NULL;      //reverse int, dec => plus의 연산 결과
 	int fir_dec_len, sec_dec_len, fir_int_len, sec_int_len, int_long_len = 0, int_short_len = 0, dec_long_len = 0, dec_short_len = 0;
 	int num_tmp = 0, roundup = 0;
+
 
 	fir_dec_len = getNodeLength(*fir_dec_head);
 	sec_dec_len = getNodeLength(*sec_dec_head);
@@ -463,6 +475,7 @@ void plus(NODE** fir_int_head, NODE** fir_dec_head, NODE** sec_int_head, NODE** 
 		dequeue(&rev_dec_head);
 	}
 
+
 	if (rev_dec_head == NULL || rev_dec_tail == NULL) {
 		rev_dec_tail = NULL;
 		rev_dec_head = NULL;
@@ -475,6 +488,7 @@ void plus(NODE** fir_int_head, NODE** fir_dec_head, NODE** sec_int_head, NODE** 
 	while (rev_int_tail != NULL) {
 		char temp = reverse_dequeue(&rev_int_tail, &rev_int_head);
 		push(stack, temp);
+		//push(stack, reverse_dequeue(&rev_int_tail));
 	}
 
 	if (rev_dec_head != NULL) {
@@ -486,13 +500,20 @@ void plus(NODE** fir_int_head, NODE** fir_dec_head, NODE** sec_int_head, NODE** 
 	while (rev_dec_tail != NULL) {
 		char temp = reverse_dequeue(&rev_dec_tail, &rev_dec_head);
 		push(stack, temp);
+		//push(stack, reverse_dequeue(&rev_dec_tail));
 	}
+	//push(stack, '@');
+
+
 }
 
 
 //fir이 크면 1, sec이 크면 -1, 같으면 0을 출력하는 함수
 //fir, dec은 역순이라는 것을 주의한다.
 int node_compare(NODE* fir_int_head, NODE* fir_int_tail, NODE* fir_dec_head, NODE* fir_dec_tail, NODE* sec_int_head, NODE* sec_int_tail, NODE* sec_dec_head, NODE* sec_dec_tail) {
+
+
+
 	if (getNodeLength(fir_int_head) > getNodeLength(sec_int_head)) {
 		return 1;
 	}
@@ -559,6 +580,7 @@ void minus(NODE** fir_int_head, NODE** fir_dec_head, NODE** sec_int_head, NODE**
 	sec_int_len = getNodeLength(*sec_int_head);
 	long_len = fir_dec_len >= sec_dec_len ? fir_dec_len : sec_dec_len;
 	short_len = fir_dec_len <= sec_dec_len ? fir_dec_len : sec_dec_len;
+
 
 	//소수부 자릿수가 더 큰 숫자의 뒷 부분을 먼저 채운다.
 	if (fir_dec_len > sec_dec_len) {
@@ -632,6 +654,8 @@ void minus(NODE** fir_int_head, NODE** fir_dec_head, NODE** sec_int_head, NODE**
 		rev_int_head = NULL;
 	}
 
+
+
 	//소수부 정수부 합치기
 	while (rev_int_tail != NULL) {
 		push(stack, reverse_dequeue(&rev_int_tail, &rev_int_head));
@@ -643,6 +667,7 @@ void minus(NODE** fir_int_head, NODE** fir_dec_head, NODE** sec_int_head, NODE**
 	}
 	while (rev_dec_tail != NULL) {
 		push(stack, reverse_dequeue(&rev_dec_tail, &rev_dec_head));
+
 	}
 
 }
@@ -664,6 +689,7 @@ void cal(NODE** postfix_head, NODE** postfix_tail) {
 		}
 		else if (data_type == OPERATOR) {
 			//stack에서 꺼내서 fir, sec은 거꾸로 뒤집혀져 있다.
+
 			NODE* fir_dec_head = NULL, * fir_dec_tail = NULL, * fir_int_head = NULL, * fir_int_tail = NULL;
 			NODE* sec_dec_head = NULL, * sec_dec_tail = NULL, * sec_int_head = NULL, * sec_int_tail = NULL;
 			pop(&stack);
@@ -709,6 +735,24 @@ void cal(NODE** postfix_head, NODE** postfix_tail) {
 				fir_dec_head = NULL;
 				fir_dec_tail = NULL;
 			}
+
+			//fir_int 의미없는 0제거
+			while (fir_int_tail != NULL && fir_int_tail->data == '0' && fir_int_tail->prev != NULL) {
+				reverse_dequeue(&fir_int_tail, &fir_int_head);
+			}
+			//sec_int 의미없는 0제거
+			while (sec_int_tail != NULL && sec_int_tail->data == '0' && sec_int_tail->prev != NULL) {
+				reverse_dequeue(&sec_int_tail, &sec_int_head);
+			}
+			//fir_dec 의미없는 0제거
+			while (fir_dec_head != NULL && fir_dec_head->data == '0') {
+				dequeue(&fir_dec_head);
+			}
+			//sec_dec 의미없는 0제거
+			while (sec_dec_head != NULL && sec_dec_head->data == '0') {
+				dequeue(&sec_dec_head);
+			}
+
 
 			switch (postfix_data) {
 			case '+':

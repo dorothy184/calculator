@@ -11,3 +11,4 @@ char dequeue(NODE** head);
 char reverse_dequeue(NODE** tail, NODE** head);
 
 #endif
+
